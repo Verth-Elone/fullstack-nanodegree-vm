@@ -85,7 +85,8 @@ def deleteMatches():
         c = conn.cursor()
         # delete all matches, return count of them
         sql = """WITH deleted AS (
-                 DELETE FROM {m} RETURNING *)
+                    DELETE FROM {m} RETURNING *
+                )
              SELECT count(*)
              FROM deleted
           """.format(m=table_match)
@@ -108,7 +109,8 @@ def deletePlayers():
         c = conn.cursor()
         # delete all players, return count of them
         sql = """WITH deleted AS (
-                 DELETE FROM {p} RETURNING *)
+                    DELETE FROM {p} RETURNING *
+                )
              SELECT count(*)
              FROM deleted
             """.format(p=table_player)
@@ -220,10 +222,31 @@ def playerStandings():
 
 def reportMatch(winner, loser):
     """Records the outcome of a single match between two players.
+
     Args:
       winner:  the id number of the player who won
       loser:  the id number of the player who lost
     """
+    if allow_custom_print:
+        print "\nStoring match outcame to DB..."
+    conn = connect()
+    if conn:
+        c = conn.cursor()
+        tid = tournament_id
+        sql = """WITH new_match AS (
+                    INSERT INTO {m} (tournament_id, winner_id)
+                        VALUES ({tid}, {winner})
+                        RETURNING id
+                )
+            SELECT id
+            FROM new_match;
+            """.format(m=table_match)
+        if execute_sql(c, sql):
+            if commit_sql(conn):
+                if allow_custom_print:
+                    print "Match record for winner: {w} / loser: {l}" +
+                    "successfuly stored.".format(w=winner, l=loser)
+        conn.close()
 
 
 def swissPairings():
