@@ -5,22 +5,115 @@
 
 import psycopg2
 
+# Some GLOBAL variables
+
+# name of the database
+database = "tournament"
+
+# names of the tables
+table_tournament = "tournament"
+table_match = "match"
+table_player = "player"
+table_match_player = "match_player"
+
+# allow custom print statments?
+# set value to True for detailed statements
+allow_custom_print = False
+
+# suppress Exception print-outs?
+# set value to True for error print suppression
+suppress_exception_po = False
+
+
+# Functions
 
 def connect():
-    """Connect to the PostgreSQL database.  Returns a database connection."""
-    return psycopg2.connect("dbname=tournament")
+    """Connect to the PostgreSQL database.  Returns a database connection
+    or False if the connection wasn't successful."""
+    if allow_custom_print: print "-Connecting to database..."
+    txt_conn = "--Connection to database '{db}' ".format(db=database)
+    try:
+        conn = psycopg2.connect("dbname={db}".format(db=database))
+        if allow_custom_print: print txt_conn + "successful."
+        return conn
+    except Exception as err:
+        if not suppress_exception_po: print txt_conn + "failed due to error:\n{err}".format(err=err)
+        return False
+
+
+def execute_sql(cursor, sql):
+    """Execute sql command through supplied db cursor.
+    Return True if query was successful else False."""
+    if allow_custom_print: print "-Executing query..."
+    try:
+        cursor.execute(sql)
+        if allow_custom_print: print "--Query executed successfuly."
+        return True
+    except Exception as err:
+        if not suppress_exception_po: print "--Query:\n" + sql + "\n--not executed due to the error:\n{err}.".format(err=err)
+        return False
+
+
+def commit_sql(connection):
+    """Commit everything. Return True if commit was successful else False."""
+    if allow_custom_print: print "-Commiting changes..."
+    try:
+        connection.commit()
+        if allow_custom_print: print "--Changes commited successfuly."
+        return True
+    except Exception as err:
+        if not suppress_exception_po: print "--Not commited due to the error:\n{err}.".format(err=err)
+        return False
 
 
 def deleteMatches():
     """Remove all the match records from the database."""
+    if allow_custom_print: print "\nDeleting matches..."
+    conn = connect()
+    if conn:
+        c = conn.cursor()
+        sql = """WITH deleted AS (
+                 DELETE FROM {m} RETURNING *)
+                 SELECT count(*)
+                 FROM deleted
+              """.format(m=table_match)
+        if execute_sql(c, sql):
+            del_count = c.fetchone()[0]
+            if commit_sql(conn):
+                if allow_custom_print: print "Deleted {c} records from table {m}".format(c=del_count, m=table_match)
+        conn.close()
 
 
 def deletePlayers():
     """Remove all the player records from the database."""
+    if allow_custom_print: print "\nDeleting players..."
+    conn = connect()
+    if conn:
+        c = conn.cursor()
+        sql = """WITH deleted AS (
+                 DELETE FROM {p} RETURNING *)
+                 SELECT count(*)
+                 FROM deleted
+              """.format(p=table_player)
+        if execute_sql(c, sql):
+            del_count = c.fetchone()[0]
+            if commit_sql(conn):
+                if allow_custom_print: print "Deleted {c} records from table {p}".format(c=del_count, p=table_player)
+        conn.close()
 
 
 def countPlayers():
     """Returns the number of players currently registered."""
+    if allow_custom_print: print "\nCounting players..."
+    conn = connect()
+    if conn:
+        c = conn.cursor()
+        sql = """SELECT COUNT(ID) FROM {p}""".format(p=table_player)
+        if execute_sql(c, sql):
+            player_count = c.fetchone()[0]
+            conn.close()
+            if allow_custom_print: print "Player count: {c}".format(c=player_count)
+            return player_count
 
 
 def registerPlayer(name):
@@ -32,6 +125,16 @@ def registerPlayer(name):
     Args:
       name: the player's full name (need not be unique).
     """
+    if allow_custom_print: print "\nRegistering a player..."
+    conn = connect()
+    if conn:
+        c = conn.cursor()
+        sql = """INSERT INTO {p} (name) VALUES
+                 ('{name}');""".format(p=table_player, name=name)
+        if execute_sql(c, sql):
+            if commit_sql(conn):
+                if allow_custom_print: print "Player {n} registered.".format(n=name)
+        conn.close()
 
 
 def playerStandings():
@@ -47,6 +150,16 @@ def playerStandings():
         wins: the number of matches the player has won
         matches: the number of matches the player has played
     """
+    if allow_custom_print: print "\nFetching player standings..."
+    conn = connect()
+    if conn:
+        c = conn.cursor()
+        tid = tournament_id
+        sql = """SELECT created FROM {t} WHERE id = {tid}""".format(t=table_tournament, tid=tid)
+        if execute_sql(c, sql):
+            print c.fetchone()[0]
+            if allow_custom_print: print "Player {n} registered.".format(n=name)
+        conn.close()
 
 
 def reportMatch(winner, loser):
@@ -75,3 +188,39 @@ def swissPairings():
     """
 
 
+def create_tournament():
+    """Crates a new game"""
+    if allow_custom_print: print "\nFetching player standings..."
+    tournament_id = 0
+    conn = connect()
+    if conn:
+        c = conn.cursor()
+        sql = """WITH created AS (
+                 INSERT INTO {t} DEFAULT VALUES RETURNING id)
+                 SELECT id
+                 FROM created;
+              """.format(t=table_tournament)
+        if execute_sql(c, sql):
+            if commit_sql(conn):
+                tournament_id = c.fetchone()[0]
+                if allow_custom_print: print "Tournament #{tid} created.".format(tid=tournament_id)
+        conn.close()
+    return tournament_id
+
+def get_latest_tournament():
+    """Returns the latest tournament id."""
+    if allow_custom_print: print "\nFetching player standings..."
+    conn = connect()
+    if conn:
+        c = conn.cursor()
+        sql = """SELECT max(id) FROM {t};"""
+        if execute_sql(c, sql):
+            latest_tournament_id = c.fetchone()[0]
+            if allow_custom_print: print "Latest tournament #: {tid}.".format(tid=latest_tournament_id)
+        conn.close()
+
+# MAIN
+
+# initialize test game
+tournament_id = create_tournament()
+print "Torunament id:", tournament_id
