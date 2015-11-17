@@ -18,7 +18,7 @@ table_match_player = "match_player"
 
 # allow custom print statments?
 # set value to True for detailed statements
-allow_custom_print = False
+allow_custom_print = True
 
 # suppress Exception print-outs?
 # set value to True for error print suppression
@@ -44,25 +44,35 @@ def connect():
         return False
 
 
-def execute_sql(cursor, sql):
+def execute_sql(cursor, sql, vars=[]):
     """Execute sql command through supplied db cursor.
-    Returns True if query was successful else False."""
+    Returns True if query was successful else False.
+
+    Args:
+        cursor: cursor from the connection
+        sql: sql string with placeholders (to prevent SQL injection)
+        vars (opt): variables for placeholders (can be tuple, list or dict)
+    """
     if allow_custom_print:
         print "-Executing query..."
     try:
-        cursor.execute(sql)
+        cursor.execute(sql, vars)
         if allow_custom_print:
             print "--Query executed successfuly."
         return True
     except Exception as err:
         if not suppress_exception_po:
-            print "--Query:\n" + sql +
-            "\n--not executed due to the error:\n{err}.".format(err=err)
+            print "--Query:\n" + sql + \
+                "\n--not executed due to the error:\n{err}.".format(err=err)
         return False
 
 
 def commit_sql(connection):
-    """Commit everything. Returns True if commit was successful else False."""
+    """Commit everything. Returns True if commit was successful else False.
+
+    Args:
+        connection: db connection object
+    """
     if allow_custom_print:
         print "-Commiting changes..."
     try:
@@ -155,15 +165,16 @@ def registerPlayer(name):
     if conn:
         c = conn.cursor()
         sql = """INSERT INTO {p} (name) VALUES
-                 ('{name}');""".format(p=table_player, name=name)
-        if execute_sql(c, sql):
+                 (%(name)s);""".format(p=table_player)
+        vars = {"name": name}
+        if execute_sql(c, sql, vars):
             if commit_sql(conn):
                 if allow_custom_print:
                     print "Player {n} registered.".format(n=name)
         conn.close()
 
 
-def playerStandings():
+def playerStandings(tournament_id=None):
     """Returns a list of the players and their win records, sorted by wins.
 
     The first entry in the list should be the player in first place,
@@ -182,21 +193,20 @@ def playerStandings():
     if conn:
         player_standings = []
         c = conn.cursor()
-        tid = tournament_id
         sql = """WITH p_wins AS (
                     SELECT {p}.id AS pid, {t}.id AS tid,
                         COUNT({m}.id) AS wcount
                     FROM {p}
                     LEFT OUTER JOIN {m} ON {p}.id = {m}.winner_id
-                    INNER JOIN {t} ON {m}.tournament_id = {t}.id
+                    LEFT OUTER JOIN {t} ON {m}.tournament_id = {t}.id
                     GROUP BY pid, tid
                 ), p_matches AS (
                     SELECT {p}.id AS pid, {t}.id AS tid,
                         COUNT({m}.id) AS mcount
                     FROM {p}
                     LEFT OUTER JOIN {mp} ON {p}.id = {mp}.player_id
-                    RIGHT OUTER JOIN {m} ON {mp}.match_id = {m}.id
-                    INNER JOIN {t} ON {m}.tournament_id = {t}.id
+                    LEFT OUTER JOIN {m} ON {mp}.match_id = {m}.id
+                    LEFT OUTER JOIN {t} ON {m}.tournament_id = {t}.id
                     GROUP BY pid, tid
                 )
             SELECT {p}.id AS id, {p}.name AS name,
@@ -204,23 +214,25 @@ def playerStandings():
                 p_matches.mcount AS matches
             FROM p_wins
             INNER JOIN p_matches ON p_wins.pid = p_matches.pid
-                AND p_wins.tid = p_matches.tid
-            INNER JOIN {p} ON p_wins.id = {p}.id
-            WHERE p_matches.tid = {tid}
+                AND (p_wins.tid = p_matches.tid
+                    OR (p_wins.tid IS NULL AND p_matches.tid IS NULL))
+            INNER JOIN {p} ON p_wins.pid = {p}.id
+            WHERE p_matches.tid IS %(tid)s;
             """.format(
                 t=table_tournament, m=table_match,
-                mp=table_match_player, p=table_player, tid=tid
+                mp=table_match_player, p=table_player
             )
-        if execute_sql(c, sql):
+        vars = {"tid": tournament_id}
+        if execute_sql(c, sql, vars):
             for row in c.fetchall():
                 player_standings.append(row)
             if allow_custom_print:
-                print "Player {n} registered.".format(n=name)
+                print "Player standings: {ps}".format(ps=player_standings)
         conn.close()
         return player_standings
 
 
-def reportMatch(winner, loser):
+def reportMatch(winner, loser, tournament_id=None):
     """Records the outcome of a single match between two players.
 
     Args:
@@ -234,18 +246,26 @@ def reportMatch(winner, loser):
         c = conn.cursor()
         tid = tournament_id
         sql = """WITH new_match AS (
-                    INSERT INTO {m} (tournament_id, winner_id)
-                        VALUES ({tid}, {winner})
-                        RETURNING id
+                        INSERT INTO {m} (tournament_id, winner_id)
+                        VALUES (%(tid)s, %(winner)s)
+                        RETURNING id AS mid
                 )
-            SELECT id
-            FROM new_match;
-            """.format(m=table_match)
-        if execute_sql(c, sql):
+            INSERT INTO {mp} (match_id, player_id)
+            SELECT mid, pid
+            FROM new_match
+            CROSS JOIN (VALUES(%(winner)s), (%(loser)s))
+                AS players_in_match(pid)
+            RETURNING match_id;
+            """.format(m=table_match, mp=table_match_player)
+        vars = {"tid": tournament_id, "winner": winner, "loser": loser}
+        if execute_sql(c, sql, vars):
+            new_match_id = c.fetchone()[0]
             if commit_sql(conn):
                 if allow_custom_print:
-                    print "Match record for winner: {w} / loser: {l}" +
-                    "successfuly stored.".format(w=winner, l=loser)
+                    print """Match record #{nmid} for winner: {w} / loser: {l}
+                    successfuly stored.""".format(
+                        w=winner, l=loser, nmid=new_match_id
+                    )
         conn.close()
 
 
@@ -264,6 +284,7 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
+    return []
 
 
 def create_tournament():
@@ -276,7 +297,8 @@ def create_tournament():
         c = conn.cursor()
         # Insert new default row and return the id of it
         sql = """WITH created AS (
-                 INSERT INTO {t} DEFAULT VALUES RETURNING id)
+                        INSERT INTO {t} DEFAULT VALUES RETURNING id
+                )
              SELECT id
              FROM created;
           """.format(t=table_tournament)
@@ -299,19 +321,12 @@ def get_latest_tournament():
     if conn:
         c = conn.cursor()
         sql = """SELECT max(id) FROM {t};""".format(t=table_tournament)
-        if execute_sql(c, sql):
+        vars = {}
+        if execute_sql(c, sql, vars):
             latest_tournament_id = c.fetchone()[0]
             if allow_custom_print:
                 print "Latest tournament #: {tid}.".format(
                     tid=latest_tournament_id
                 )
         conn.close()
-
-
-def main():
-    tournament_id = create_tournament()
-    print "Torunament id:", tournament_id
-
-
-# MAIN
-main()
+        return latest_tournament_id

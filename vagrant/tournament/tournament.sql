@@ -19,7 +19,6 @@ CREATE DATABASE tournament;
 -- but keeping tournament records
 CREATE TABLE tournament(
 	id serial primary key,
-	winner_id int,
 	created timestamp DEFAULT now()
 	);
 -- show the created table structure
@@ -44,7 +43,8 @@ CREATE TABLE match(
 CREATE TABLE player(
 	id SERIAL primary key,
 	name text,
-	registered timestamp DEFAULT now()
+	registered timestamp DEFAULT now(),
+	rank int DEFAULT 0
 	);
 -- show the created table structure
 \d player
@@ -60,3 +60,16 @@ CREATE TABLE match_player(
 	);
 -- show the created table structure
 \d match_player
+
+-- Create table for tournament-player unique combinations
+-- Deletion of tournaments and players
+-- is allowed through ON DELETE CASCADE
+CREATE TABLE tournament_player(
+	tournament_id int references tournament (id) ON DELETE CASCADE,
+	player_id int references player (id) ON DELETE CASCADE,
+	entered timestamp DEFAULT now(),
+	points int DEFAULT 0,
+	primary key (tournament_id, player_id)
+	);
+-- show the created table structure
+\d tournament_player
