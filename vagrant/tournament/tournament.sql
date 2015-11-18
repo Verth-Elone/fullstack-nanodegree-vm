@@ -55,6 +55,7 @@ CREATE TABLE player(
 CREATE TABLE match_player(
 	match_id int references match (id) ON DELETE CASCADE,
 	player_id int references player (id) ON DELETE CASCADE,
+	was_byed boolean DEFAULT FALSE,
 	entered timestamp DEFAULT now(),
 	primary key (match_id, player_id)
 	);
