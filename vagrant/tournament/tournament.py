@@ -15,6 +15,7 @@ table_tournament = "tournament"
 table_match = "match"
 table_player = "player"
 table_match_player = "match_player"
+table_tournament_player = "tournament_player"
 
 # allow custom print statments?
 # set value to True for detailed statements
@@ -174,6 +175,35 @@ def registerPlayer(name):
         conn.close()
 
 
+def add_player_to_tournament(player_id, tournament_id):
+    """Adds a player to the tournament.
+    
+    The database creates a new unique pair of tournament - player
+    in the table_tournament_player, with 0 (DEFAULT) starting points.
+    
+    Args:
+        player_id: existing id of player from table_player.
+        tournament_id: existing id of tournament from table_tournament.
+    """
+    if allow_custom_print:
+        print "\nAdding player #{pid} to the tournament #{tid}...".format(
+            pid=player_id, tid=tournament_id
+        )
+    conn = connect()
+    if conn:
+        c = conn.cursor()
+        sql = """INSERT INTO {tp} (tournament_id, player_id) VALUES
+                 (%(tid)s, %(pid)s);""".format(
+                    tp=table_tournament_player
+                 )
+        vars = {"tid": tournament_id, "pid": player_id}
+        if execute_sql(c, sql, vars):
+            if commit_sql(conn):
+                if allow_custom_print:
+                    print "Player {n} registered.".format(n=name)
+        conn.close()
+
+
 def playerStandings(tournament_id=None):
     """Returns a list of the players and their win records, sorted by wins.
 
@@ -269,7 +299,7 @@ def reportMatch(winner, loser, tournament_id=None):
         conn.close()
 
 
-def swissPairings():
+def swissPairings(tournament_id=None):
     """Returns a list of pairs of players for the next round of a match.
 
     Assuming that there are an even number of players registered, each player
@@ -284,6 +314,25 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
+    if allow_custom_print:
+        print "\nPairing players for next round..."
+    conn = connect()
+    if conn:
+        c = conn.cursor()
+        tid = tournament_id
+        if tid == None:
+            # There is no tournament, matches and winners need to be
+            # counted before pairing can be initialized
+            sql = """
+                """.format()
+            vars = {}
+            if execute_sql(c, sql, vars):
+                if commit_sql(conn):
+                    if allow_custom_print:
+                        print """ """.format(
+                            
+                        )
+        conn.close()
     return []
 
 
