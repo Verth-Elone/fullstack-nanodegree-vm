@@ -37,7 +37,7 @@
 		<type label="SET" length="1" sql="SET" quote=""/>
 		<type label="Bit" length="0" sql="bit" quote=""/>
 	</group>
-</datatypes><table x="308" y="202" name="tournament">
+</datatypes><table x="318" y="212" name="tournament">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -48,14 +48,13 @@
 <part>id</part>
 </key>
 </table>
-<table x="753" y="88" name="match">
+<table x="698" y="85" name="match">
 <row name="id" null="1" autoincrement="1">
 <datatype>INTEGER</datatype>
 <default>NULL</default></row>
 <row name="tournament_id" null="1" autoincrement="0">
 <datatype>INTEGER</datatype>
-<default>NULL</default><relation table="tournament" row="id" />
-</row>
+<default>NULL</default></row>
 <row name="winner_id" null="1" autoincrement="0">
 <datatype>INTEGER</datatype>
 <default>NULL</default></row>
@@ -66,7 +65,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="753" y="254" name="player">
+<table x="711" y="254" name="player">
 <row name="id" null="1" autoincrement="1">
 <datatype>INTEGER</datatype>
 <default>NULL</default></row>
