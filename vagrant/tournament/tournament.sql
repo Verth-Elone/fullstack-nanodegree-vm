@@ -24,15 +24,16 @@ CREATE TABLE tournament(
 -- show the created table structure
 \d tournament
 
--- Create table for storing match information
--- Deletion of matches
--- is allowed through ON DELETE CASCADE
--- winner_id is not referenced to player(id),
--- due to possibility of removing winning player,
--- but keeping match records
+-- Create table for storing match information.
+-- Tournament_id is not referenced to tournament(id),
+-- as it should be possible to play match outside tournament.
+-- Winner_id is not referenced to player(id),
+-- due to TIE (Null) and possibility of removing winning player,
+-- but keeping match records.
 CREATE TABLE match(
 	id serial primary key,
-	tournament_id int references tournament (id) ON DELETE CASCADE,
+	tournament_id,
+	-- tournament_id int references tournament (id) ON DELETE CASCADE,
 	winner_id int,
 	created timestamp DEFAULT now()
 	);
@@ -55,16 +56,19 @@ CREATE TABLE player(
 CREATE TABLE match_player(
 	match_id int references match (id) ON DELETE CASCADE,
 	player_id int references player (id) ON DELETE CASCADE,
-	was_byed boolean DEFAULT FALSE,
+	is_bye_match boolean DEFAULT FALSE,
 	entered timestamp DEFAULT now(),
 	primary key (match_id, player_id)
 	);
 -- show the created table structure
 \d match_player
 
--- Create table for tournament-player unique combinations
+-- Create table for tournament-player unique combinations.
 -- Deletion of tournaments and players
--- is allowed through ON DELETE CASCADE
+-- is allowed through ON DELETE CASCADE.
+-- TO DO: this shouldn't be possible for player deletion.
+-- If player is deleted, the reference should point to "dummy" player,
+-- but results should persist (same with match_player table)
 CREATE TABLE tournament_player(
 	tournament_id int references tournament (id) ON DELETE CASCADE,
 	player_id int references player (id) ON DELETE CASCADE,
