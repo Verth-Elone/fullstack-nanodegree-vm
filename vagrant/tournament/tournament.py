@@ -15,6 +15,7 @@ table_tournament = "tournament"
 table_match = "match"
 table_player = "player"
 table_match_player = "match_player"
+table_tournament_player = "tournament_player"
 
 # allow custom print statments?
 # set value to True for detailed statements
@@ -24,8 +25,12 @@ allow_custom_print = True
 # set value to True for error print suppression
 suppress_exception_po = False
 
+points_for_win = 3
+points_for_tie = 1
+points_for_loss = 0
 
 # Functions
+
 
 def connect():
     """Connect to the PostgreSQL database.  Returns a database connection
@@ -168,14 +173,19 @@ def registerPlayer(name):
     conn = connect()
     if conn:
         c = conn.cursor()
-        sql = """INSERT INTO {p} (name) VALUES
-                 (%(name)s);""".format(p=table_player)
+        pid = 0
+        sql = """INSERT INTO {p} (name)
+            VALUES (%(name)s)
+            RETURNING {p}.id;
+            """.format(p=table_player)
         vars = {"name": name}
         if execute_sql(c, sql, vars):
             if commit_sql(conn):
+                pid = c.fetchone()[0]
                 if allow_custom_print:
                     print "Player {n} registered.".format(n=name)
         conn.close()
+        return pid
 
 
 def playerStandings(tournament_id=None):
@@ -239,14 +249,39 @@ def playerStandings(tournament_id=None):
         return player_standings
 
 
-def reportMatch(players, winner=None, tournament_id=None):
+def reportMatch(players, tournament_id=None, winner=None, ):
     """Records the outcome of a single match between two players.
 
+    As my vision of this function is to allow any number of players to
+    enter a match, but only one can be a winner or there is a tie,
+    I have altered the winner/looser to tuple/list of players
+    and passing the winner as index of this tuple/list.
+
+    This would be useful for FFA (free for all) matches in multiplayer
+    games of more than 2 players in a match.
+
+    Tournament id was added as argument to link a match with some tournament,
+    however it is still possible to record a match outside any tournament.
+
+    The point in this is to use the same function with practice
+    and tournament matches.
+
     Args:
-      players:  tuple of players' IDs who played the match
+      players:  tuple/list of players' IDs who played the match
       winner (None): None for TIE, otherwise valid tuple index of winner
-      tournament_id(None): id of the tournament
+      tournament_id (None): id of the tournament
     """
+    sql_1 = """INSERT INTO {m} (tournament_id, winner_id)
+            VALUES (%(tid)s, %(winner_id)s)
+            RETURNING id AS mid
+            """.format(m=table_match)
+    sql_2 = """INSERT INTO {mp} (match_id, player_id)
+            SELECT %s AS mid, %s AS pid;
+            """.format(mp=table_match_player)
+    sql_3 = """UPDATE {tp} SET points = points + %(points)s
+            WHERE tournament_id = %(tid)s
+            AND player_id = %(pid)s;
+            """.format(tp=table_tournament_player)
     if allow_custom_print:
         print "\nStoring match outcame to DB..."
     conn = connect()
@@ -257,39 +292,55 @@ def reportMatch(players, winner=None, tournament_id=None):
             winner_id = players[winner]
         else:
             winner_id = None
-        sql_1 = """INSERT INTO {m} (tournament_id, winner_id)
-            VALUES (%(tid)s, %(winner_id)s)
-            RETURNING id AS mid
-            """.format(m=table_match)
-        vars_1 = {"tid": tournament_id, "winner": winner_id, players}
+        vars_1 = {"tid": tournament_id, "winner_id": winner_id}
         if execute_sql(c, sql_1, vars_1):
-            new_match_id = c.fetchone()[0]
+            match_id = c.fetchone()[0]
+            # prepare list [(newMatchId, player1_id), (newMatchId, player1_id)]
+            vars_2 = []
+            vars_3 = []
+            for player_id in players:
+                vars_2.append((match_id, player_id))
             if commit_sql(conn):
                 if allow_custom_print:
-                    print """Match record #{nmid}
-                        successfuly stored.""".format(nmid=new_match_id)
-                sql_2 = """INSERT INTO {mp} (match_id, player_id)
-                SELECT mid, pid
-                FROM VALUES ({nmid})
-                    AS nm(mid)
-                CROSS JOIN VALUES (%s)
-                    AS ps(pid);
-                """.format(mp=table_match_player, nmid=new_match_id)
-                if execute_sql(c, sql, players, True):
+                    print """Match record #{nmid} successfuly stored.
+                        """.format(nmid=match_id)
+                if execute_sql(c, sql_2, vars_2, True):
                     if commit_sql(conn):
                         if allow_custom_print:
-                            print """#{rc} player/match records
-                                stored successfully.""".format(rc=len(players))
+                            print """{rc} player/match records stored successfully.
+                                """.format(rc=len(players))
+                        # if the match is being recorded for a tournament
+                        # it is needed to store the points acquired
+                        if tournament_id is not None:
+                            all_ptr = []
+                            for player_id in players:
+                                ptr = {}
+                                ptr["tid"] = tournament_id
+                                ptr["pid"] = player_id
+                                if winner is not None:
+                                    if player_id == winner_id:
+                                        ptr["points"] = points_for_win
+                                    else:
+                                        ptr["points"] = points_for_loss
+                                else:
+                                    ptr["points"] = points_for_tie
+                                all_ptr.append(ptr)
+                            if execute_sql(c, sql_3, all_ptr, True):
+                                if commit_sql(conn):
+                                    print """All player points updated."""
         conn.close()
 
 
-def swissPairings(tournament_id=None):
+def swissPairings(tournament_id):
     """Returns a list of pairs of players for the next round of a match.
 
     Assuming that there are an even number of players registered, each player
     appears exactly once in the pairings.  Each player is paired with another
     player with an equal or nearly-equal win record, that is, a player adjacent
     to him or her in the standings.
+
+    Args:
+        tournament_id: id of the tournament
 
     Returns:
       A list of tuples, each of which contains (id1, name1, id2, name2)
@@ -304,7 +355,7 @@ def swissPairings(tournament_id=None):
     if conn:
         c = conn.cursor()
         tid = tournament_id
-        sql = """
+        sql = """CREATE VIEW
             """.format()
         vars = {}
         if execute_sql(c, sql, vars):
@@ -319,6 +370,12 @@ def swissPairings(tournament_id=None):
 
 def create_tournament():
     """Crates a new tournament"""
+    sql = """WITH created AS (
+                    INSERT INTO {t} DEFAULT VALUES RETURNING id
+            )
+         SELECT id
+         FROM created;
+      """.format(t=table_tournament)
     if allow_custom_print:
         print "\nFetching player standings..."
     tournament_id = 0
@@ -326,12 +383,6 @@ def create_tournament():
     if conn:
         c = conn.cursor()
         # Insert new default row and return the id of it
-        sql = """WITH created AS (
-                        INSERT INTO {t} DEFAULT VALUES RETURNING id
-                )
-             SELECT id
-             FROM created;
-          """.format(t=table_tournament)
         if execute_sql(c, sql):
             if commit_sql(conn):
                 tournament_id = c.fetchone()[0]
@@ -345,12 +396,12 @@ def create_tournament():
 
 def get_latest_tournament():
     """Returns the latest tournament id."""
+    sql = """SELECT max(id) FROM {t};""".format(t=table_tournament)
     if allow_custom_print:
         print "\nFetching player standings..."
     conn = connect()
     if conn:
         c = conn.cursor()
-        sql = """SELECT max(id) FROM {t};""".format(t=table_tournament)
         vars = {}
         if execute_sql(c, sql, vars):
             latest_tournament_id = c.fetchone()[0]
@@ -360,3 +411,27 @@ def get_latest_tournament():
                 )
         conn.close()
         return latest_tournament_id
+
+
+def register_player_for_tournament(pid, tid):
+    """Registers the player for tournament.
+
+    Args:
+        pid: player id
+        tid: tournament id
+    """
+    sql = """INSERT INTO {tp} (tournament_id, player_id)
+        VALUES (%(tid)s, %(pid)s);
+        """.format(tp=table_tournament_player)
+    if allow_custom_print:
+        print """\nRegistering player #{pid} for tournament #{tid}...
+            """.format(pid=pid, tid=tid)
+    conn = connect()
+    if conn:
+        c = conn.cursor()
+        vars = {"tid": tid, "pid": pid}
+        if execute_sql(c, sql, vars):
+            if commit_sql(conn):
+                if allow_custom_print:
+                    print "Player successfuly registered for tournament."
+        conn.close()

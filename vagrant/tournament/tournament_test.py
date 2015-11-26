@@ -4,6 +4,7 @@
 
 from tournament import *
 
+
 def testDeleteMatches():
     deleteMatches()
     print "1. Old matches can be deleted."
@@ -88,8 +89,16 @@ def testReportMatches():
     registerPlayer("Diane Grant")
     standings = playerStandings()
     [id1, id2, id3, id4] = [row[0] for row in standings]
-    reportMatch(id1, id2)
-    reportMatch(id3, id4)
+    # EDIT START
+    # edited due to changes to reportMatch arguments
+    # players are passed as tuple/list
+    # 2nd argument is tournament id for which we want to get next round matchings
+    # More info in the reportMatch function doc string
+    # winner is passed as index of this tuple/list
+    # If there is no winner, use False (or nothing for default False)
+    reportMatch((id1, id2), None, 0)
+    reportMatch([id3, id4], None, 0)
+    # EDIT END
     standings = playerStandings()
     for (i, n, w, m) in standings:
         if m != 1:
@@ -101,18 +110,43 @@ def testReportMatches():
     print "7. After a match, players have updated standings."
 
 
-def testPairings():
+def testPairings(tid):
     deleteMatches()
     deletePlayers()
+
+    # EDIT START
+    # as we got the ids from standings[i][0] we do not need to store
+    # return value of registerPlayer()
+    # EDIT END
+
     registerPlayer("Twilight Sparkle")
     registerPlayer("Fluttershy")
     registerPlayer("Applejack")
     registerPlayer("Pinkie Pie")
     standings = playerStandings()
     [id1, id2, id3, id4] = [row[0] for row in standings]
-    reportMatch(id1, id2)
-    reportMatch(id3, id4)
-    pairings = swissPairings()
+
+    # ADD START
+    tid = test_tournament()
+    # now we need to register players for the tournament
+    register_player_for_tournament(id1, tid)
+    register_player_for_tournament(id2, tid)
+    register_player_for_tournament(id3, tid)
+    register_player_for_tournament(id4, tid)
+    # ADD END
+
+    # EDIT START
+    # edited due to changes to reportMatch arguments
+    # players are passed as tuple/list
+    # 2nd argument is tournament id for which we want to get next round matchings
+    # More info in the reportMatch function doc string
+    # winner is passed as index of this tuple/list
+    # If there is no winner, use False (or nothing for default False)
+    reportMatch((id1, id2), tid, 0)
+    reportMatch([id3, id4], tid, 0)
+    # EDIT END
+
+    pairings = swissPairings(tid)
     if len(pairings) != 2:
         raise ValueError(
             "For four players, swissPairings should return two pairs.")
@@ -125,6 +159,15 @@ def testPairings():
     print "8. After one match, players with one win are paired."
 
 
+# new function added to implement tournament creation
+def test_tournament():
+    tid = create_tournament()
+    if tid != 0:
+        print "-- Tournament #{tid} successfully created.".format(tid=tid)
+    else:
+        print "-- No tournament was created due to an unexpected error."
+    return tid
+
 if __name__ == '__main__':
     testDeleteMatches()
     testDelete()
@@ -133,7 +176,9 @@ if __name__ == '__main__':
     testRegisterCountDelete()
     testStandingsBeforeMatches()
     testReportMatches()
-    testPairings()
+    # for pairings new tournament has to be created
+    # as matches played outside tournament are considered as training
+    tid = test_tournament()
+    # testPairings had to be altered by passing tournament id argument
+    testPairings(tid)
     print "Success!  All tests pass!"
-
-

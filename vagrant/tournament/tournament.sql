@@ -32,7 +32,7 @@ CREATE TABLE tournament(
 -- but keeping match records.
 CREATE TABLE match(
 	id serial primary key,
-	tournament_id,
+	tournament_id int,
 	-- tournament_id int references tournament (id) ON DELETE CASCADE,
 	winner_id int,
 	created timestamp DEFAULT now()
