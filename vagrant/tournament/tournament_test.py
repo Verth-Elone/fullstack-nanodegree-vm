@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #
 # Test cases for tournament.py
+# Altered by Peter Majko, to reflect some additional functionality
 
 from tournament import *
 
