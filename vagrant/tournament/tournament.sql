@@ -78,3 +78,10 @@ CREATE TABLE tournament_player(
 	);
 -- show the created table structure
 \d tournament_player
+
+CREATE VIEW ordered_tournament_standings AS (
+	SELECT ROW_NUMBER() OVER (ORDER BY tp.points DESC,p.id ASC) AS rowid,
+    tp.tournament_id AS tid, p.id AS player_id, p.name AS player_name, tp.points
+    FROM tournament_player AS tp
+    INNER JOIN player AS p ON tp.player_id = p.id
+);

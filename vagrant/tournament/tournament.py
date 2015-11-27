@@ -353,23 +353,39 @@ def swissPairings(tournament_id):
         print "\nPairing players for next round..."
     conn = connect()
     if conn:
+        next_round_pairs = []
         c = conn.cursor()
         tid = tournament_id
-        sql = """CREATE VIEW
-            """.format()
-        vars = {}
+        sql = """WITH even AS (
+                SELECT ROW_NUMBER() OVER () AS rowid2, *
+                FROM ordered_tournament_standings
+                WHERE tid = %(tid)s
+                AND rowid %% 2 = 0
+            ), odd AS (
+                SELECT ROW_NUMBER() OVER () AS rowid2, *
+                FROM ordered_tournament_standings
+                WHERE tid = %(tid)s
+                AND rowid %% 2 = 1
+            )
+            SELECT even.player_id, even.player_name, odd.player_id, odd.player_name
+            FROM even
+            INNER JOIN odd ON odd.rowid2 = even.rowid2;
+            """.format(tp=table_tournament_player, p=table_player)
+        vars = {"tid": tournament_id}
         if execute_sql(c, sql, vars):
             if commit_sql(conn):
+                for i, row in enumerate(c.fetchall()):
+                    next_round_pairs.append(row)
                 if allow_custom_print:
-                    print """ """.format(
-                        
+                    print """Player pairings for next round:\n{pp}""".format(
+                        pp=next_round_pairs
                     )
         conn.close()
-    return []
+    return next_round_pairs
 
 
 def create_tournament():
-    """Crates a new tournament"""
+    """Creates a new tournament"""
     sql = """WITH created AS (
                     INSERT INTO {t} DEFAULT VALUES RETURNING id
             )
