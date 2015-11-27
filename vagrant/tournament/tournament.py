@@ -367,7 +367,8 @@ def swissPairings(tournament_id):
                 WHERE tid = %(tid)s
                 AND rowid %% 2 = 1
             )
-            SELECT even.player_id, even.player_name, odd.player_id, odd.player_name
+            SELECT even.player_id, even.player_name,
+                odd.player_id, odd.player_name
             FROM even
             INNER JOIN odd ON odd.rowid2 = even.rowid2;
             """.format(tp=table_tournament_player, p=table_player)
