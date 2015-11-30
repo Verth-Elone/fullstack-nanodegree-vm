@@ -17,7 +17,7 @@ Installation:
 Projects:
 ---------
 
-Tournament
+#### Tournament
 __________
 Description: Swiss style tournament postgreSQL database, with Python functions operating on it.
 
