@@ -120,21 +120,26 @@ def testPairings(tid):
     # return value of registerPlayer()
     # EDIT END
 
-    registerPlayer("Twilight Sparkle")
-    registerPlayer("Fluttershy")
-    registerPlayer("Applejack")
-    registerPlayer("Pinkie Pie")
-    standings = playerStandings()
-    [id1, id2, id3, id4] = [row[0] for row in standings]
+    pA = registerPlayer("Twilight Sparkle")
+    pB = registerPlayer("Fluttershy")
+    pC = registerPlayer("Applejack")
+    pD = registerPlayer("Pinkie Pie")
 
     # ADD START
-    tid = test_tournament()
     # now we need to register players for the tournament
-    register_player_for_tournament(id1, tid)
-    register_player_for_tournament(id2, tid)
-    register_player_for_tournament(id3, tid)
-    register_player_for_tournament(id4, tid)
+    register_player_for_tournament(pA, tid)
+    register_player_for_tournament(pB, tid)
+    register_player_for_tournament(pC, tid)
+    register_player_for_tournament(pD, tid)
     # ADD END
+
+    # EDIT START
+    # As we can have more tournaments now, we need get standings
+    # only for this tournament! So passing tid to playerStandings
+    standings = playerStandings(tid)
+    # EDIT END
+
+    [id1, id2, id3, id4] = [row[0] for row in standings]
 
     # EDIT START
     # edited due to changes to reportMatch arguments
@@ -159,6 +164,60 @@ def testPairings(tid):
             "After one match, players with one win should be paired.")
     print "8. After one match, players with one win are paired."
 
+def testPairings2(tid):
+    """Testing pairings for another tournament,
+    without player and match deletion,
+    where there is odd number of players added
+    and one match uses tie (draw):
+    1st round:
+        A plays B = tie
+        C plays D = C wins
+        E gets bye
+    2nd round:
+        A plays B
+        C plays E
+        D gets bye
+
+    Yet to implement: after bye, store it in database, player can't get more bye
+    after that - this should be coming from VIEW ordered_tournament_standings,
+    but maybe not - need to think more about that
+
+    Another thing is that players shouldn't play more than one game with the same
+    oponent - need to think more about that
+    """
+
+    pA = registerPlayer("A")
+    pB = registerPlayer("B")
+    pC = registerPlayer("C")
+    pD = registerPlayer("D")
+    pE = registerPlayer("E")
+
+    register_player_for_tournament(pA, tid)
+    register_player_for_tournament(pB, tid)
+    register_player_for_tournament(pC, tid)
+    register_player_for_tournament(pD, tid)
+    register_player_for_tournament(pE, tid)
+
+    standings = playerStandings(tid)
+    [id1, id2, id3, id4, id5] = [row[0] for row in standings]
+
+    reportMatch((id1, id2), tid, None)
+    reportMatch([id3, id4], tid, 0)
+    reportMatch((id5,), tid, 0)
+
+    pairings = swissPairings(tid)
+    if len(pairings) != 3:
+        raise ValueError(
+            "For five players, swissPairings should return three pairs.")
+    [(pid1, pname1, pid2, pname2), (pid3, pname3, pid4, pname4), \
+     (pid5, pname5, pid6, pname6)] = pairings
+    correct_pairs = set([frozenset([id1, id2]), frozenset([id3, id5]), frozenset([id4, None])])
+    actual_pairs = set([frozenset([pid1, pid2]), frozenset([pid3, pid4]), frozenset([pid5, pid6])])
+    if correct_pairs != actual_pairs:
+        raise ValueError(
+            "After second match, players with one win should be paired.")
+    print "9. After second match, players with one win are paired."
+
 
 # new function added to implement tournament creation
 def test_tournament():
@@ -182,4 +241,6 @@ if __name__ == '__main__':
     tid = test_tournament()
     # testPairings had to be altered by passing tournament id argument
     testPairings(tid)
+    tid2 = test_tournament()
+    testPairings2(tid2)
     print "Success!  All tests pass!"

@@ -16,10 +16,11 @@ table_match = "match"
 table_player = "player"
 table_match_player = "match_player"
 table_tournament_player = "tournament_player"
+view_standings = "full_standings_with_names"
 
 # allow custom print statments?
 # set value to True for detailed statements
-allow_custom_print = True
+allow_custom_print = False
 
 # suppress Exception print-outs?
 # set value to True for error print suppression
@@ -106,7 +107,7 @@ def deleteMatches():
         sql = """WITH deleted AS (
                     DELETE FROM {m} RETURNING *
                 )
-             SELECT count(*)
+             SELECT COUNT(*)
              FROM deleted
           """.format(m=table_match)
         if execute_sql(c, sql):
@@ -130,7 +131,7 @@ def deletePlayers():
         sql = """WITH deleted AS (
                     DELETE FROM {p} RETURNING *
                 )
-             SELECT count(*)
+             SELECT COUNT(*)
              FROM deleted
             """.format(p=table_player)
         if execute_sql(c, sql):
@@ -210,35 +211,18 @@ def playerStandings(tournament_id=None):
     if conn:
         player_standings = []
         c = conn.cursor()
-        sql = """WITH p_wins AS (
-                    SELECT {p}.id AS pid, {t}.id AS tid,
-                        COUNT({m}.id) AS wcount
-                    FROM {p}
-                    LEFT OUTER JOIN {m} ON {p}.id = {m}.winner_id
-                    LEFT OUTER JOIN {t} ON {m}.tournament_id = {t}.id
-                    GROUP BY pid, tid
-                ), p_matches AS (
-                    SELECT {p}.id AS pid, {t}.id AS tid,
-                        COUNT({m}.id) AS mcount
-                    FROM {p}
-                    LEFT OUTER JOIN {mp} ON {p}.id = {mp}.player_id
-                    LEFT OUTER JOIN {m} ON {mp}.match_id = {m}.id
-                    LEFT OUTER JOIN {t} ON {m}.tournament_id = {t}.id
-                    GROUP BY pid, tid
-                )
-            SELECT {p}.id AS id, {p}.name AS name,
-                p_wins.wcount AS wins,
-                p_matches.mcount AS matches
-            FROM p_wins
-            INNER JOIN p_matches ON p_wins.pid = p_matches.pid
-                AND (p_wins.tid = p_matches.tid
-                    OR (p_wins.tid IS NULL AND p_matches.tid IS NULL))
-            INNER JOIN {p} ON p_wins.pid = {p}.id
-            WHERE p_matches.tid IS %(tid)s;
-            """.format(
-                t=table_tournament, m=table_match,
-                mp=table_match_player, p=table_player
-            )
+        sql_none = """SELECT pid, pname, mwon, mplayed
+            FROM {pmwc}
+            WHERE tid IS %(tid)s;
+            """.format(pmwc=view_standings)
+        sql_value = """SELECT pid, pname, mwon, mplayed
+            FROM {pmwc}
+            WHERE tid = %(tid)s;
+            """.format(pmwc=view_standings)
+        if tournament_id is None:
+            sql = sql_none
+        else:
+            sql = sql_value
         vars = {"tid": tournament_id}
         if execute_sql(c, sql, vars):
             for row in c.fetchall():
@@ -249,7 +233,7 @@ def playerStandings(tournament_id=None):
         return player_standings
 
 
-def reportMatch(players, tournament_id=None, winner=None, ):
+def reportMatch(players, tournament_id=None, winner=None):
     """Records the outcome of a single match between two players.
 
     As my vision of this function is to allow any number of players to
@@ -327,7 +311,8 @@ def reportMatch(players, tournament_id=None, winner=None, ):
                                 all_ptr.append(ptr)
                             if execute_sql(c, sql_3, all_ptr, True):
                                 if commit_sql(conn):
-                                    print """All player points updated."""
+                                    if allow_custom_print:
+                                        print """All player points updated."""
         conn.close()
 
 
@@ -367,10 +352,10 @@ def swissPairings(tournament_id):
                 WHERE tid = %(tid)s
                 AND rowid %% 2 = 1
             )
-            SELECT even.player_id, even.player_name,
-                odd.player_id, odd.player_name
-            FROM even
-            INNER JOIN odd ON odd.rowid2 = even.rowid2;
+            SELECT odd.player_id, odd.player_name,
+                even.player_id, even.player_name
+            FROM odd
+            LEFT JOIN even ON odd.rowid2 = even.rowid2;
             """.format(tp=table_tournament_player, p=table_player)
         vars = {"tid": tournament_id}
         if execute_sql(c, sql, vars):

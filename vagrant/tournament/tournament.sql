@@ -79,9 +79,80 @@ CREATE TABLE tournament_player(
 -- show the created table structure
 \d tournament_player
 
+-- Create view for ordered tournament standings
 CREATE VIEW ordered_tournament_standings AS (
 	SELECT ROW_NUMBER() OVER (ORDER BY tp.points DESC,p.id ASC) AS rowid,
     tp.tournament_id AS tid, p.id AS player_id, p.name AS player_name, tp.points
     FROM tournament_player AS tp
     INNER JOIN player AS p ON tp.player_id = p.id
 );
+\d ordered_tournament_standings
+
+CREATE VIEW full_match_info AS (
+	SELECT mp.player_id AS pid, m.tournament_id AS tid,
+		m.id AS mid, m.winner_id AS wid
+	FROM match AS m
+	INNER JOIN match_player AS mp ON m.id = mp.match_id
+);
+\d full_match_info
+
+-- this view will contain all players who haven't played
+-- any match yet AND those which played non-tournament matches
+CREATE VIEW partial_non_tournament_match_info AS (
+	SELECT p.id AS pid, tid, mid, wid
+	FROM player AS p
+	LEFT JOIN full_match_info AS fmi ON p.id = fmi.pid
+	WHERE fmi.tid IS NULL
+);
+\d partial_non_tournament_match_info
+
+-- this view will contain all players
+CREATE VIEW full_non_tournament_match_info AS (
+	SELECT p.id AS pid, pntmi.tid AS tid, pntmi.mid AS mid,
+		CASE WHEN pid = pntmi.wid THEN 1
+			ELSE Null
+		END
+		AS wid
+	FROM player AS p
+	LEFT JOIN partial_non_tournament_match_info AS pntmi
+		ON p.id = pntmi.pid
+);
+\d full_non_tournament_match_info
+
+CREATE VIEW full_non_tournament_standings AS (
+	SELECT pid, tid, COUNT(mid) AS mplayed, COUNT(wid) AS mwon
+	FROM full_non_tournament_match_info
+	GROUP BY pid, tid
+);
+\d full_non_tournament_standings
+
+CREATE VIEW full_tournament_match_info AS (
+	SELECT tp.tournament_id AS tid, tp.player_id AS pid, fmi.mid, fmi.wid
+	FROM tournament_player AS tp
+	LEFT JOIN full_match_info AS fmi ON tp.player_id = fmi.pid
+);
+\d full_tournament_match_info
+
+CREATE VIEW full_tournament_standings AS (
+	SELECT pid, tid, COUNT(mid) AS mplayed, COUNT(wid) AS mwon
+	FROM full_tournament_match_info AS ftmi
+	GROUP BY pid, tid
+);
+\d full_tournament_standings
+
+CREATE VIEW full_standings AS (
+	SELECT *
+	FROM full_non_tournament_standings
+	UNION
+	SELECT *
+	FROM full_tournament_standings
+);
+\d full_standings
+
+CREATE VIEW full_standings_with_names AS (
+	SELECT p.id AS pid, p.name AS pname,
+		fs.mplayed AS mplayed, fs.mwon AS mwon, fs.tid AS tid
+	FROM full_standings AS fs
+	INNER JOIN player AS p ON fs.pid = p.id
+);
+\d full_standings_with_names
