@@ -11,7 +11,7 @@ Installation:
 3. Clone/download this repo.
 4. Using terminal/command line, navigate to "(your path)\fullstack-nanodegree-vm\vagrant" subdirectory
 5. Use command "vagrant up".
-6. If everything went well, you can now use command "vagrant ssh" to access terminal console of the project system installation.
+6. If everything went well, you can now use command "vagrant ssh" to access terminal console of the project system installation. Please note that this will be not possible without SSH client installed on the host machine. Cygwin, MinGW or Git come with this client.
 7. Typing "..\\..\vagrant" will move you to the right directory, from which you can select project.
 
 Projects:
