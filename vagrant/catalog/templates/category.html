@@ -1,0 +1,16 @@
+{% extends "catalog.html" %}
+{% block content %}
+<div id="category">
+  {{ category.name }}
+</div>
+<div id="items">
+  {% for i in items %}
+    {{i.name}}
+    </br>
+    {{i.description}}
+    </br>
+    {{i.image}}
+    </br>
+  {% endfor %}
+</div>
+{% endblock %}
