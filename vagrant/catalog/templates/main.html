@@ -1,0 +1,16 @@
+<!doctype html>
+<title>My Catalog Project</title>
+<link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
+<div class=page>
+  <h1>Catalog project</h1>
+  <div class=metanav>
+  abcdefgh
+  </div>
+  {% for message in get_flashed_messages() %}
+    <div class=flash>{{ message }}</div>
+  {% endfor %}
+  <div class=main>
+  {% block body %}{% endblock %}
+  </div>
+  <div style="clear:both">
+</div>
