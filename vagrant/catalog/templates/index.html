@@ -1,0 +1,27 @@
+<html>
+	<body>
+		<h1>Catalog project</h1>
+
+		<div>
+			{% for c in categories %}
+				{{ c.name }}
+				</br>
+			{% endfor %}
+		</div>
+		<div>
+			{% for i in items %}
+
+				{{i.name}}
+				</br>
+
+				{{i.description}}
+				</br>
+
+				{{i.image}}
+				</br>
+
+			{% endfor %}
+		</div>
+
+	</body>
+</html>
