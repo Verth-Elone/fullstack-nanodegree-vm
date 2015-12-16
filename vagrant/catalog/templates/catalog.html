@@ -1,0 +1,12 @@
+{% extends "main.html" %}
+{% block body %}
+  <div class="categories">
+  {% for c in categories %}
+    {{ c.name }}
+    </br>
+  {% endfor %}
+  </div>
+  <div class="content">
+  {% block content %} {% endblock %}
+  </div>
+{% endblock %}
