@@ -1,16 +1,12 @@
 {% extends "catalog.html" %}
 {% block content %}
-<div id="category">
+<div class="category_header">
   {{ category.name }}
 </div>
-<div id="items">
+<div class="category_items">
   {% for i in items %}
-    {{i.name}}
-    </br>
-    {{i.description}}
-    </br>
-    {{i.image}}
-    </br>
+  	<a href="{{ url_for('showItem', item_id=i.id) }}">{{i.name}}</a>
+  </br>
   {% endfor %}
 </div>
 {% endblock %}

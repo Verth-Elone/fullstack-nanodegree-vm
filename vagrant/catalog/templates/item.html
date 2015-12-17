@@ -1,0 +1,20 @@
+{% extends "catalog.html" %}
+{% block content %}
+<div class="item_header">
+  {{ item.name }}
+</div>
+<div class="item_content">
+	<div class="item_image">
+		{{item.image}}
+	</div>
+	<div class="item_desc">
+		{{item.description}}
+	</div>
+	<div class="item_opts">
+		<a href="{{ url_for('editItem', item_id=item.id) }}">Edit</a>
+		|
+		<a href="{{ url_for('deleteItem', item_id=item.id) }}">Delete</a>
+	</div>
+	<div style="clear:both">
+</div>
+{% endblock %}

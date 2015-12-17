@@ -2,11 +2,28 @@
 {% block body %}
   <div class="categories">
   {% for c in categories %}
-    {{ c.name }}
+    <a href="{{ url_for('showItems', category_id=c.id) }}">{{ c.name }}</a>
     </br>
   {% endfor %}
   </div>
   <div class="content">
-  {% block content %} {% endblock %}
+  {% block content %}
+  	<div class="catalog_opts">
+  		<a href="{{ url_for('newItem') }}">Add Item</a>
+  	</div>
+  	<div class="latest_items">
+  		<p>Latest items:</p>
+  		{% for i in items %}
+  		<a href="{{ url_for('showItem', item_id=i.id) }}">{{i.name}}
+  			{% for c in categories %}
+  			{% if i.category_id == c.id %}
+  			({{ c.name}})
+  			{% endif %}
+  			{% endfor %}
+  		</a>
+  		</br>
+  		{% endfor %}
+  	</div>
+  {% endblock %}
   </div>
 {% endblock %}
