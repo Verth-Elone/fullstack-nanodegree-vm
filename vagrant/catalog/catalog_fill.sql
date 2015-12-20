@@ -7,14 +7,17 @@ Language: PostgreSQL
 Purpose: Fill out the database with test data
 */
 
-\c catalog
+\c catalogwithusers
+INSERT INTO usr (name, email)
+VALUES ('Peter Majko', 'verthelone@gmail.com');
+
 INSERT INTO category (name)
 VALUES ('c1'), ('c2');
 
-INSERT INTO item (name, description, image, category_id)
+INSERT INTO item (name, description, image, category_id, user_id)
 VALUES
-	('i1', 'Some desc i1', 'Some path i1', 1),
-	('i2', 'Some desc i2', 'Some path i2', 1),
-	('i3', 'Some desc i3', 'Some path i3', 2),
-	('i4', 'Some desc i4', 'Some path i4', 2)
+	('i1', 'Some desc i1', 'Some path i1', 1, 1),
+	('i2', 'Some desc i2', 'Some path i2', 1, 1),
+	('i3', 'Some desc i3', 'Some path i3', 2, 1),
+	('i4', 'Some desc i4', 'Some path i4', 2, 1)
 ;

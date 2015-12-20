@@ -12,7 +12,12 @@
     <div class=page>
       <a href="{{ url_for('showCatalog') }}"><h1>Catalog project</h1></a>
       <div class=metanav>
-      abcdefgh
+        <a href="/catalog" class="button">Home</a>
+        {% if user_logged_in %}
+        <a href="/gdisconnect" class="button">Logout</a>
+        {% else %}
+        <a href="/login" class="button">Login</a>
+        {% endif %}
       </div>
       {% for message in get_flashed_messages() %}
         <div class=flash>{{ message }}</div>

@@ -10,7 +10,11 @@
 	<p>Image:</p>
 	  <input type="text" size="30" name="img">
 	<p>Category:</p>
-	  <input type="text" size="30" name="cat">
+	  <select name="cat">
+	  	{% for c in categories %}
+	    <option value="{{c.id}}">{{c.name}}</option>
+	    {% endfor %}
+	  </select>
 	<p>
 	<input type="submit" value="Create">
 	</form>

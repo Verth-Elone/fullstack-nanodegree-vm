@@ -9,19 +9,21 @@
   <div class="content">
   {% block content %}
   	<div class="catalog_opts">
+      {% if user_logged_in %}
   		<a href="{{ url_for('newItem') }}">Add Item</a>
+      {% endif %}
   	</div>
   	<div class="latest_items">
   		<p>Latest items:</p>
   		{% for i in items %}
-  		<a href="{{ url_for('showItem', item_id=i.id) }}">{{i.name}}
-  			{% for c in categories %}
-  			{% if i.category_id == c.id %}
-  			({{ c.name}})
-  			{% endif %}
-  			{% endfor %}
-  		</a>
-  		</br>
+	  		<a href="{{ url_for('showItem', item_id=i.id) }}">{{i.name}}
+	  			{% for c in categories %}
+	  			  {% if i.category_id == c.id %}
+	  			    ({{ c.name}})
+	  			  {% endif %}
+	  			{% endfor %}
+	  		</a>
+	  		</br>
   		{% endfor %}
   	</div>
   {% endblock %}

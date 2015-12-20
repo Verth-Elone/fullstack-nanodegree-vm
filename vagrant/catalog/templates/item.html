@@ -11,9 +11,11 @@
 		{{item.description}}
 	</div>
 	<div class="item_opts">
+		{% if user_is_creator %}
 		<a href="{{ url_for('editItem', item_id=item.id) }}">Edit</a>
 		|
 		<a href="{{ url_for('deleteItem', item_id=item.id) }}">Delete</a>
+		{% endif %}
 	</div>
 	<div style="clear:both">
 </div>

@@ -1,7 +1,7 @@
 {% extends "main.html" %}
 {% block body %}
 <div class="new_item">
-	<h2>New Item</h2>
+	<h2>Edit Item</h2>
 	<form action="{{ url_for('editItem', item_id=item.id) }}" method = "post">
 	<p>Name:</p>
 	  <input type="text" size="30" name="name" placeholder="{{item.name}}">
@@ -10,7 +10,11 @@
 	<p>Image:</p>
 	  <input type="text" size="30" name="img"placeholder="{{item.image}}">
 	<p>Category:</p>
-	  <input type="number" size="30" name="cat" placeholder="{{item.category_id}}">
+	  <select name="cat">
+	  	{% for c in categories %}
+	    <option value="{{c.id}}"{% if c.id == item.category_id %} selected="selected"{% endif %}>{{c.name}}</option>
+	    {% endfor %}
+	  </select>
 	<p>
 	<input type="submit" value="Save">
 	<a href="{{ url_for('showItem', item_id=item.id)}}"> Cancel </a>
