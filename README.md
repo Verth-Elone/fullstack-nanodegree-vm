@@ -35,3 +35,21 @@ Testing:
 To test out, you simply run command "python tournament_test.py" from "tournament" subdirectory.
 
 Refer to comments in code of "tournament.py" for further description of all functions.
+
+#### Catalog
+__________
+Description: Catalog web app with working database, login/logout through Google and Facebook, CSRF protection
+
+Database installation: 
+
+1.  Navigate to subdirectory "catalog"
+
+2.  Run command "psql" to enter postgreSQL console
+
+3.  Run "CREATE DATABASE catalogwithusers;" command
+
+4.  Run command "\q" to leave psql environment
+
+5.  Run command "python database_setup.py"
+
+... need to add more ...
