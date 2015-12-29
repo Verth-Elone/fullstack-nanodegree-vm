@@ -1,9 +1,13 @@
 {% extends "main.html" %}
 {% block body %}
   <div class="categories">
+    <div class="cat_nav" onclick="window.location='{{ url_for('showCatalog') }}';">
+      Home
+     </div>
   {% for c in categories %}
-    <a href="{{ url_for('showItems', category_id=c.id) }}">{{ c.name }}</a>
-    </br>
+    <div class="cat_nav" onclick="window.location='{{ url_for('showItems', category_id=c.id) }}';">
+      {{ c.name }}
+    </div>
   {% endfor %}
   </div>
   <div class="content">
@@ -14,7 +18,7 @@
       {% endif %}
   	</div>
   	<div class="latest_items">
-  		<p>Latest items:</p>
+  		<p><h2>Latest items:</h2></p>
   		{% for i in items %}
 	  		<a href="{{ url_for('showItem', item_id=i.id) }}">{{i.name}}
 	  			{% for c in categories %}
