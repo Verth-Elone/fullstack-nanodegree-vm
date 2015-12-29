@@ -1,9 +1,12 @@
 {% extends "catalog.html" %}
 {% block content %}
-<div class="category_header">
-  {{ category.name }}
+<div class="catalog_opts">
+  {% if user_logged_in %}
+  <a href="{{ url_for('newItem') }}">Add Item</a>
+  {% endif %}
 </div>
 <div class="category_items">
+  <p>{{ category.name }}</p>
   {% for i in items %}
   	<a href="{{ url_for('showItem', item_id=i.id) }}">{{i.name}}</a>
   </br>
