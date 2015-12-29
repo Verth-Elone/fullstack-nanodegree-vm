@@ -10,18 +10,22 @@
   </head>
   <body>
     <div class=page>
-      <a href="{{ url_for('showCatalog') }}"><h1>Catalog project</h1></a>
-      <div class=metanav>
-        <a href="/catalog" class="button">Home</a>
-        {% if user_logged_in %}
-        <a href="/disconnect" class="button">Logout</a>
-        {% else %}
-        <a href="/login" class="button">Login</a>
-        {% endif %}
+      <div class=page_header>
+        <div class=header_left>
+        <h1><a href="{{ url_for('showCatalog') }}" class="title">Catalog project</a></h1>
+        </div>
+        <div class=user>
+          <span class="lbutton" onclick="window.location={% if user_logged_in %}'/disconnect';">
+            Logout
+          {% else %}'/login';">
+            Login
+          {% endif %}
+          </span>
+        </div>
+        {% for message in get_flashed_messages() %}
+          <div class=flash>{{ message }}</div>
+        {% endfor %}
       </div>
-      {% for message in get_flashed_messages() %}
-        <div class=flash>{{ message }}</div>
-      {% endfor %}
       <div class=main>
       {% block body %}{% endblock %}
       </div>
