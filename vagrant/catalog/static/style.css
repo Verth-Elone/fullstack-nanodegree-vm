@@ -1,5 +1,5 @@
-a, h1, h2 {
-  color: #377ba8;
+h1 {
+    color: #336688;
 }
 
 h1, h2 {
@@ -7,78 +7,112 @@ h1, h2 {
   margin: 0;
 }
 
-h1 {
-  border-bottom: 2px solid #eee;
-  padding-bottom: 0.2em;
-}
-
 div {
   padding: 0.2em;
   margin: 0.2em;
 }
 
-a.button {
-    -webkit-appearance: button;
-    -moz-appearance: button;
-    appearance: button;
-    padding: 0.2em;
+a.title  
+{
+  color: inherit;
+  text-decoration:none;
+}
 
-    text-decoration: none;
-    color: initial;
+span.lbutton {
+  color: white;
+}
+
+span.lbutton:hover {
+  cursor: pointer;
+  color: #FF9900;
+}
+
+div.cat_nav {
+  margin: 2px;
+  border: 3px #ccc;
+  border-style: solid;
+  border-radius: -25px;
+  background: #336688;
+  text-align: center;
+  color: white;
+}
+
+div.cat_nav:hover {
+  cursor: pointer;
+  border-color: #FF9900;
+}
+
+.f-signin {
+  position: absolute;
 }
 
 .page {
-  min-height: 200px;
-  margin: 2em auto;
-  border: 5px solid #ccc;
-  padding: 0.8em;
+  min-height: 400px;
+  max-width: 66%;
+  margin: auto;
+  padding: 1em;
   background: white;
   overflow: auto;
-  background: black;
 }
 
-.metanav {
-  background: pink;
+.page_header {
+  min-width: 356px;
+  width: 100%;
+  background: white;
+  display: flex;
+}
+
+.header_left {
+  float: left;
+  border-bottom: 2px solid #FF9900;
+  flex: 1;
+  margin-right: 0px;
+}
+
+.user {
+  border-bottom: 2px solid orange;
+  padding-top: 1em;
+  margin-left: 0px;
+  background: #336688;
+  min-width: 60px;
+  text-align: center;
 }
 
 .flash {
-  background: maroon;
+  background: #eee;
 }
 
 .main {
+  border: 3px solid #336688;
   width: 75%;
   max-width: 1200px;
   min-width: 300px;
+  min-height: 600px;
   margin: 0 auto;
-  color: blue;
-  background: yellow;
+  color: #336688;
+  background: #ccc;
   display: flex;
 }
 
 .categories {
   float: left;
-  color: blue;
-  background: red;
+  color: #336688;
+  background: white;
   flex: 1;
 }
 
 .content {
-  color: red;
+  color: #336688;
   float: left;
-  background: skyblue;
+  background: white;
   flex: 3;
 }
 
 .latest_items {
-  background: orange;
-}
-
-.category_header {
-  background: navy;
+  text-align: center;
 }
 
 .category_items {
-  background: lime;
 }
 
 .item_header {
