@@ -3,7 +3,11 @@
 
 <!-- GOOGLE PLUS SIGN IN-->
 
-  <div id="signingButton">
+  <div class="signingButton">
+    <h2>
+      Sing in:
+    </h2>
+    <br>
     <span class="g-signin"
       data-scope="openid email"
       data-clientid="558436025463-qhnf3q73khhui64jo2c7k3fe7b4qi096.apps.googleusercontent.com"
@@ -13,8 +17,6 @@
       data-callback="signInCallback"
       data-approvalprompt="force">
     </span>
-  </div>
-  <div id="result"></div>
 
   <script>
     function signInCallback(authResult) {
@@ -62,7 +64,7 @@
     cookie     : true,  // enable cookies to allow the server to access 
                         // the session
     xfbml      : true,  // parse social plugins on this page
-    version    : 'v2.2' // use version 2.2
+    version    : 'v2.4' // use version 2.2
   });
   };
   // Load the SDK asynchronously
@@ -104,18 +106,14 @@
     });
   }
 </script>
+<span class="f-signin">
+  <fb:login-button scope="public_profile,email" onlogin="sendTokenToServer();">
+    <a href='javascript:sendTokenToServer()'>Log in with Facebook</a>
+  </fb:login-button>
+</span>
+</div>
 
-
-<button>
-         
-
-          <fb:login-button scope="public_profile,email" onlogin="sendTokenToServer();">
-<a href='javascript:sendTokenToServer()'>Login with Facebook</a>
-
-</fb:login-button>
-
-
-        </button>
+<div id="result"></div>
 
 <!--END FACEBOOK SIGN IN -->
 
